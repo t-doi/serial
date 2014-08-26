@@ -22,6 +22,7 @@ int main(void)
 	if(res!=true)
 	  {
 	    printf("Port Open Error\n");
+		getchar();
 	    return 1;
 	  }
 
