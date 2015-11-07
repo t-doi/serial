@@ -99,6 +99,7 @@ flag_opened=1;
  if(baudrate==9600)baud=B9600;
  if(baudrate==38400)baud=B38400;
  if(baudrate==57600)baud=B57600;
+ if(baudrate==115200)baud=B115200;
 
  // newtio.c_cflag = baud | CRTSCTS | CS8 | CLOCAL | CREAD;
  newtio.c_cflag = baud | IGNPAR | CS8 | CLOCAL | CREAD;
