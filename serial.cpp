@@ -8,7 +8,7 @@
 //#define LINUX
 
 #ifdef LINUX
-#undef WIN32 
+#undef WIN32
 #include <strings.h>//for bzero()
 #include <stdlib.h>//for exit
 #include <unistd.h>//for read
@@ -67,9 +67,9 @@ flag=SetCommState(hcom,&dcb1);
     if(flag==true)
     {
     GetCommTimeouts(hcom,&ctmo);
-    ctmo.ReadIntervalTimeout=1000;//0;//30;//SICKLMSでは6ms
-    ctmo.ReadTotalTimeoutMultiplier=5000;//=1;//0928
-    //ctmo.ReadTotalTimeoutConstant=1000;//=6;//0928
+	ctmo.ReadIntervalTimeout=300;//0;//30;//SICKLMSでは6ms．受信間隔を考慮して適宜設定
+	ctmo.ReadTotalTimeoutMultiplier=10;//5000;//=1;//0928
+	ctmo.ReadTotalTimeoutConstant=10;//1000;//=6;//0928
     flag=SetCommTimeouts(hcom,&ctmo);
     }
 
@@ -81,12 +81,12 @@ flag_opened=1;
 
 
 #ifdef LINUX
-// fd = open(comport_in, O_RDWR | O_NOCTTY ); 
- fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY ); 
+// fd = open(comport_in, O_RDWR | O_NOCTTY );
+ fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY );
  if (fd <0) {
-   perror(comport_in); 
+   perror(comport_in);
    //printf("init() error. %s is not opend. fd=%d\n", comport_in, fd);//debug
-   return(false); 
+   return(false);
  }
  //printf("init() com opened\n");//debug
  flag_opened=1;
@@ -94,7 +94,7 @@ flag_opened=1;
  tcgetattr(fd,&oldtio); /* 現在のポート設定を待避 */
 
  bzero(&newtio, sizeof(newtio));
- 
+
  tcflag_t baud;
  if(baudrate==9600)baud=B9600;
  if(baudrate==38400)baud=B38400;
