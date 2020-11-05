@@ -4,8 +4,10 @@
 //要windows.h ->Linux に対応
 //modified 060530
 //http://www.linux.or.jp/JF/JFdocs/Serial-Programming-HOWTO-3.html
+//201026 roomba/Linuxに対応して多少修正
 
-//#define LINUX
+#define LINUX //Linuxの場合こちらだけ有効
+//#define WIN32 //Windowsの場合こちらだけ有効
 
 #ifdef LINUX
 #undef WIN32
@@ -19,6 +21,10 @@
 #include <stdio.h>
 #endif
 
+#ifdef WIN32
+#undef LINUX
+  #include <windows.h>
+#endif
 
 #include <stdio.h>
 #include "serial.h"
@@ -28,6 +34,13 @@
   struct termios oldtio,newtio;
 #endif
 
+#ifdef WIN32
+    HANDLE hcom;
+    DWORD mask;
+    COMMTIMEOUTS ctmo;
+    OVERLAPPED o;
+    COMMPROP cmp;
+#endif
 
 //---------------------------------------------------------------------------
 bool serial::init(char *comport_in,int baudrate)
@@ -49,10 +62,10 @@ dcb1.BaudRate=baudrate;
 //変数の値を見るとわかる
 
 dcb1.fParity=1;//0
-dcb1.Parity=NOPARITY;//for AI_Motor
+dcb1.Parity=NOPARITY;//for AI_Motor Roomba
 //dcb1.Parity=EVENPARITY;
-dcb1.StopBits=ONESTOPBIT;//for AI_Motor
-dcb1.ByteSize=8;//for AI Motor
+dcb1.StopBits=ONESTOPBIT;//for AI_Motor Roomba
+dcb1.ByteSize=8;//for AI Motor Roomba
 dcb1.fNull=FALSE;//こうしておかないとエラーが頻出
 //dcb1.EvtChar=STX;
 flag=SetCommState(hcom,&dcb1);
@@ -67,9 +80,9 @@ flag=SetCommState(hcom,&dcb1);
     if(flag==true)
     {
     GetCommTimeouts(hcom,&ctmo);
-	ctmo.ReadIntervalTimeout=300;//0;//30;//SICKLMSでは6ms．受信間隔を考慮して適宜設定
-	ctmo.ReadTotalTimeoutMultiplier=10;//5000;//=1;//0928
-	ctmo.ReadTotalTimeoutConstant=10;//1000;//=6;//0928
+	//ctmo.ReadIntervalTimeout=300;//0;//30;//SICKLMSでは6ms．受信間隔を考慮して適宜設定
+	//ctmo.ReadTotalTimeoutMultiplier=10;//5000;//=1;//0928
+	//ctmo.ReadTotalTimeoutConstant=10;//1000;//=6;//0928
     flag=SetCommTimeouts(hcom,&ctmo);
     }
 
@@ -81,8 +94,8 @@ flag_opened=1;
 
 
 #ifdef LINUX
-// fd = open(comport_in, O_RDWR | O_NOCTTY );
- fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY );
+ fd = open(comport_in, O_RDWR | O_NOCTTY );
+// fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY );
  if (fd <0) {
    perror(comport_in);
    //printf("init() error. %s is not opend. fd=%d\n", comport_in, fd);//debug
@@ -92,8 +105,8 @@ flag_opened=1;
  flag_opened=1;
 
  tcgetattr(fd,&oldtio); /* 現在のポート設定を待避 */
-
  bzero(&newtio, sizeof(newtio));
+ newtio=oldtio;//デフォルト値を設定
 
  tcflag_t baud;
  if(baudrate==9600)baud=B9600;
@@ -102,12 +115,19 @@ flag_opened=1;
  if(baudrate==115200)baud=B115200;
 
  // newtio.c_cflag = baud | CRTSCTS | CS8 | CLOCAL | CREAD;
- newtio.c_cflag = baud | IGNPAR | CS8 | CLOCAL | CREAD;
- newtio.c_iflag = IGNPAR;
- newtio.c_oflag = 0;
+// newtio.c_cflag = baud | IGNPAR | CS8 | CLOCAL | CREAD;
+// newtio.c_cflag = baud | CS8 | CREAD;//for roomba 201026
+ newtio.c_cflag = baud | CS8 | CLOCAL | CREAD;//for roomba 201026
+// newtio.c_iflag = IGNPAR;
+// newtio.c_oflag = ;
+// newtio.c_oflag = oldtio.c_oflag;
 
  /* set input mode (non-canonical, no echo,...) */
- newtio.c_lflag = 0;
+ newtio.c_lflag = 0;//201026 Roomba
+// newtio.c_lflag = oldtio.c_lflag;
+
+ tcsetattr(fd,TCSANOW,&newtio);//201026 新しい設定反映
+ flag=true;
 #endif
 
 return(flag);
@@ -166,8 +186,8 @@ bool flag=false;
 #endif
 
 #ifdef LINUX
-	tcflush(fd, TCIFLUSH);
- tcsetattr(fd,TCSANOW,&newtio);
+//	tcflush(fd, TCIFLUSH);//受信したがまだ読んでいないデータフラッシュ
+// tcsetattr(fd,TCSANOW,&newtio);//受信モードの設定??
    byte = read(fd,buf_ptr,size);   /* 待ち文字入力されたら戻る */
 #endif
 

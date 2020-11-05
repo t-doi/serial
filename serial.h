@@ -5,20 +5,10 @@
 //---------------------------------------------------------------------------
 #ifndef serialH
 #define serialH
-#ifdef WIN32
-  #include <windows.h>
-#endif
 //---------------------------------------------------------------------------
 
 class serial
 {
-#ifdef WIN32
-    HANDLE hcom;
-    DWORD mask;
-    COMMTIMEOUTS ctmo;
-    OVERLAPPED o;
-    COMMPROP cmp;
-#endif
 public:
     char flag_opened;//comポートが開かれているかどうか
     char comport[16];//comポート名
